@@ -1,0 +1,30 @@
+  $('pb').style.width='0';go.disabled=false;go.textContent='Deteksi Lagi';busy=false;
+}
+
+function show(o){
+  res.style.display='block';const ul=$('items');ul.innerHTML='';
+  if(!o||o.valid===false){
+    $('pct').textContent='–';$('st').textContent='Ruangan tidak terlihat jelas';$('st').className='st no';
+    $('sum').textContent=(o&&o.ringkasan)||'Arahkan kamera ke ruangan dengan pencahayaan cukup.';return;
+  }
+  let s=Math.max(0,Math.min(100,Math.round(+o.skor||0)));
+  if(o.sampah_terlihat)s=Math.min(s,70);
+  $('pct').textContent=s+'%';
+  const st=$('st');
+  if(o.sampah_terlihat){st.textContent='Masih kotor — terlihat ada sampah';st.className='st no';}
+  else if(s<80){st.textContent='Cukup bersih, tapi masih bisa dirapikan';st.className='st no';}
+  else{st.textContent='Ruangan bersih';st.className='st ok';}
+  $('sum').textContent=o.ringkasan||'';
+  (o.temuan||[]).forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
+}
+
+go.onclick=scan;
+$('fi').onchange=async e=>{
+  const f=e.target.files[0];if(!f||busy)return;
+  if(!key.value.trim()){alert('Masukkan API key Anthropic dulu.');return;}
+  busy=true;go.disabled=true;res.style.display='none';
+  await analyze([await fileB64(f)]);
+};
+</script>
+</body>
+</html>
