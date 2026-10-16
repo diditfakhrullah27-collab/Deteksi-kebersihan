@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Deteksi Kebersihan Ruangan</title>
+<style>
+:root{--bg:#f5f7f6;--card:#fff;--tx:#14201a;--mu:#5d6b64;--ac:#15803d;--bad:#c2410c;--bd:#dfe5e1;--btn:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1512;--card:#18211c;--tx:#eaf2ed;--mu:#97a69d;--ac:#4ade80;--bad:#fb923c;--bd:#2a362f;--btn:#06210f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0 2px}
+p.sub{margin:0 0 14px;color:var(--mu);font-size:14px}
+.cam{position:relative;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:3/4;border:1px solid var(--bd)}
+video{width:100%;height:100%;object-fit:cover;display:block}
+.ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#cfd8d3;padding:24px;font-size:14px}
+.scan{position:absolute;left:0;right:0;height:3px;background:#4ade80;box-shadow:0 0 14px 4px #4ade80aa;top:0;display:none}
+.cam.on .scan{display:block;animation:sw 1.6s linear infinite}
+@keyframes sw{0%{top:0}50%{top:calc(100% - 3px)}100%{top:0}}
+.timer{position:absolute;top:10px;right:10px;background:#000a;color:#fff;border-radius:999px;padding:4px 12px;font-size:13px;display:none}
+.cam.on .timer{display:block}
+.bar{height:6px;background:var(--bd);border-radius:99px;margin:12px 0;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ac)}
+select,input[type=password]{width:100%;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:14px;margin-top:8px}
+button,label.btn{display:block;width:100%;padding:14px;border-radius:12px;border:0;background:var(--ac);color:var(--btn);font-size:16px;font-weight:600;cursor:pointer;text-align:center;margin-top:10px}
+button:disabled{opacity:.5}
+label.btn{position:relative;overflow:hidden}
+label.btn.alt{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+.res{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:18px;margin-top:14px;display:none}
+.pct{font-size:56px;font-weight:800;line-height:1}
+</style>
+</head>
+<body>
+<main>
+    <h1>Deteksi Kebersihan Ruangan</h1>
+    <p class="sub">Arahkan kamera ke ruangan untuk menganalisis tingkat kebersihan.</p>
+
+    <div class="cam" id="camContainer">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="ph" id="placeholder">Kamera belum aktif.<br>Ketuk tombol di bawah untuk mulai.</div>
+        <div class="scan"></div>
+        <div class="timer" id="timer">3s</div>
+    </div>
+
+    <div class="bar"><i id="progressBar"></i></div>
+
+    <button id="startBtn">Nyalakan Kamera & Deteksi</button>
+
+    <div class="res" id="resultCard">
+        <div class="pct" id="scorePct">0%</div>
+        <p id="resultText">Hasil analisis akan muncul di sini.</p>
+    </div>
+</main>
+
+<script>
+const video = document.getElementById('video');
+const camContainer = document.getElementById('camContainer');
+const placeholder = document.getElementById('placeholder');
+const startBtn = document.getElementById('startBtn');
+const timer = document.getElementById('timer');
+const progressBar = document.getElementById('progressBar');
+const resultCard = document.getElementById('resultCard');
+const scorePct = document.getElementById('scorePct');
+const resultText = document.getElementById('resultText');
+
+startBtn.addEventListener('click', async () => {
+    try {
+        startBtn.disabled = true;
+        startBtn.textContent = "Mengakses Kamera...";
+        
+        // Minta izin akses kamera belakang jika ada
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' } 
+        });
+        
+        video.srcObject = stream;
+        placeholder.style.display = 'none';
+        camContainer.classList.add('on');
+        startBtn.textContent = "Menganalisis Ruangan...";
+        
+        // Mulai simulasi hitung mundur / proses scan (misal 3 detik)
+        let timeLeft = 3;
+        timer.textContent = timeLeft + "s";
+        progressBar.style.width = "0%";
+
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 33.3;
+            progressBar.style.width = progress + "%";
+            timeLeft--;
+            if(timeLeft > 0) {
+                timer.textContent = timeLeft + "s";
+            } else {
+                timer.textContent = "Selesai";
+            }
+        }, 1000);
+
+        setTimeout(() => {
+            clearInterval(interval);
+            // Matikan kamera setelah selesai (opsional)
+            stream.getTracks().forEach(track => track.stop());
+            camContainer.classList.remove('on');
+            
+            // Tampilkan hasil acak simulasi kebersihan (misal antara 75% - 98%)
+            const score = Math.floor(Math.random() * 24) + 75;
+            scorePct.textContent = score + "%";
+            resultText.textContent = score > 85 ? "Ruangan anda sangat bersih dan rapi!" : "Ruangan cukup bersih, namun ada beberapa bagian yang bisa dirapikan.";
+            resultCard.style.display = 'block';
+
+            startBtn.disabled = false;
+            startBtn.textContent = "Deteksi Ulang";
+        }, 3000);
+
+    } catch (err) {
+        alert("Gagal mengakses kamera: " + err.message);
+        startBtn.disabled = false;
+        startBtn.textContent = "Nyalakan Kamera & Deteksi";
+    }
+});
+</script>
+</body>
+</html>
